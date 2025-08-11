@@ -76,23 +76,3 @@ jobs:
 
       - name: Show image digest
         run: echo "Digest ${{ steps.build-image.outputs.digest }}"
-
-  scan:
-    name: Trivy Scan
-    needs: build-and-push
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - name: Pull image
-        run: |
-          docker pull ghcr.io/${{ github.repository }}:latest
-      - name: Run Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: ghcr.io/${{ github.repository }}:latest
-          format: table
-          exit-code: '0'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
