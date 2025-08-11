@@ -1,0 +1,98 @@
+name: Build and Push Container Image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.java'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'Dockerfile'
+      - '.github/workflows/build-push.yml'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build & Push (Buildah)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (for version extraction only)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Derive version
+        id: vars
+        run: |
+          VERSION=$(grep '^version' build.gradle | head -1 | cut -d' ' -f3 | tr -d "'\"")
+          if [ -z "$VERSION" ]; then VERSION=latest; fi
+          if [ "${{ github.ref_type }}" = tag ]; then VERSION=${GITHUB_REF_NAME}; fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo VERSION=$VERSION
+
+      - name: Log in to GHCR
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image with Buildah (multi-arch)
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: |
+            latest
+            ${{ steps.vars.outputs.version }}
+          containerfiles: |
+            ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            APP_VERSION=${{ steps.vars.outputs.version }}
+
+      - name: Push to GHCR
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+
+      - name: Show image digest
+        run: echo "Digest ${{ steps.build-image.outputs.digest }}"
+
+  scan:
+    name: Trivy Scan
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Pull image
+        run: |
+          docker pull ghcr.io/${{ github.repository }}:latest
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:latest
+          format: table
+          exit-code: '0'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
