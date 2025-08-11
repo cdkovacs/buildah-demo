@@ -1,16 +1,7 @@
 ###############################
 # Multi-stage Docker build for Spring Boot (Gradle) application
 # Optimized for fast rebuilds & small runtime image
-#
-# Build examples:
-#   docker build -t buildah-demo:latest .
-#   docker run -p 8080:8080 buildah-demo:latest
-#
-# Enable BuildKit (recommended):
-#   DOCKER_BUILDKIT=1 docker build -t buildah-demo:latest .
 ###############################
-
-## (Removed # syntax directive for buildah compatibility)
 
 ###############################
 # 1. Base definitions (override with --build-arg as needed)
@@ -84,17 +75,3 @@ COPY --from=layers /layers/application/ ./
 # Launch using Spring Boot's layered JarLauncher
 ENTRYPOINT ["sh","-c","java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
 CMD [""]
-
-###############################
-# Alternative (simpler) approach: single fat jar
-# Replace the 4 COPY lines above with:
-# COPY --from=build /app/build/libs/${JAR_FILE} app.jar
-# ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
-###############################
-
-###############################
-# Build args override example:
-# docker build \
-#   --build-arg APP_VERSION=1.2.3 \
-#   -t ${APP_NAME}:1.2.3 .
-###############################

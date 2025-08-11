@@ -1,6 +1,8 @@
 ###############################
 # Runtime-only image: expects pre-built app.jar in build context
 # Jar is built outside (GitHub Actions) with cached Gradle deps.
+#
+# Non-actions-based builds should use Dockerfile instead.
 ###############################
 ARG JRE_IMAGE=eclipse-temurin:17-jre
 FROM ${JRE_IMAGE}
