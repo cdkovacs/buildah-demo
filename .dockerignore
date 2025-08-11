@@ -1,0 +1,26 @@
+# Exclude build artifacts & local metadata
+build/
+.gradle/
+!gradle/wrapper/**
+
+# IDE / OS
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+*.swp
+*~
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Reports
+surefire-reports/
+jacoco.exec
+
+# Logs
+*.log
+logs/
