@@ -1,0 +1,23 @@
+###############################
+# Runtime-only image: expects pre-built app.jar in build context
+# Jar is built outside (GitHub Actions) with cached Gradle deps.
+###############################
+ARG JRE_IMAGE=eclipse-temurin:17-jre
+FROM ${JRE_IMAGE}
+WORKDIR /app
+
+# Non-root user
+RUN useradd -u 1001 spring && mkdir -p /app && chown -R 1001:1001 /app
+USER 1001
+
+ENV SPRING_PROFILES_ACTIVE=default \
+    JAVA_OPTS="" \
+    TZ=UTC
+
+EXPOSE 8080
+
+# Copy pre-built jar (provided as app.jar by the workflow)
+COPY app.jar app.jar
+
+ENTRYPOINT ["sh","-c","java $JAVA_OPTS -jar app.jar"]
+CMD [""]

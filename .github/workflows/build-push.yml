@@ -36,6 +36,17 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
+
+      - name: Cache Gradle (wrapper + caches)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Derive version
         id: vars
@@ -45,6 +56,15 @@ jobs:
           if [ "${{ github.ref_type }}" = tag ]; then VERSION=${GITHUB_REF_NAME}; fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo VERSION=$VERSION
+
+      - name: Build JAR (skip tests)
+        run: ./gradlew --no-daemon clean bootJar -x test
+
+      - name: Prepare app.jar
+        run: |
+          JAR=$(ls build/libs/*.jar | head -1)
+          cp "$JAR" app.jar
+          ls -lh app.jar
 
       - name: Log in to GHCR
         uses: redhat-actions/podman-login@v1
@@ -67,7 +87,7 @@ jobs:
             latest
             ${{ steps.vars.outputs.version }}
           containerfiles: |
-            ./Dockerfile
+            ./Dockerfile.runtime
           platforms: linux/amd64,linux/arm64
           build-args: |
             APP_VERSION=${{ steps.vars.outputs.version }}
