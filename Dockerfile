@@ -10,7 +10,7 @@
 #   DOCKER_BUILDKIT=1 docker build -t buildah-demo:latest .
 ###############################
 
-# syntax=docker/dockerfile:1.7-labs
+## (Removed # syntax directive for buildah compatibility)
 
 ###############################
 # 1. Base definitions (override with --build-arg as needed)
@@ -33,15 +33,15 @@ COPY gradle gradle
 COPY build.gradle settings.gradle ./
 
 # Pre-fetch dependencies (won't fail build if sources missing yet)
-RUN --mount=type=cache,target=/root/.gradle \
-    ./gradlew --no-daemon dependencyManagement || true
+# (Removed BuildKit cache mount flag for buildah compatibility.)
+RUN ./gradlew --no-daemon dependencyManagement || true
 
 # Copy the source AFTER dependency download for better layer caching
 COPY src src
 
 # Build the executable jar (skip tests here for speed; remove -x test to include them)
-RUN --mount=type=cache,target=/root/.gradle \
-    ./gradlew --no-daemon clean bootJar -x test
+# (Removed BuildKit cache mount flag.)
+RUN ./gradlew --no-daemon clean bootJar -x test
 
 ###############################
 # 3. Layer extraction stage for better runtime cache reuse
