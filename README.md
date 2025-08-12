@@ -180,6 +180,3 @@ Lombok `@Slf4j` was added to the main application class to log startup events. A
 - Spring Boot Layered Jars: https://docs.spring.io/spring-boot/reference/docker/layers.html
 - Buildah GitHub Action: https://github.com/redhat-actions/buildah-build
 - GHCR Docs: https://docs.github.com/en/packages
-
----
-Feel free to adapt either Dockerfile or ask for a matrix workflow example if you want both published automatically.
